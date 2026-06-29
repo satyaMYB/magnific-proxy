@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Listing Agent</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080810;--surface:#0f0f1a;--surface2:#16162a;--surface3:#1e1e35;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --text:#eeeef5;--muted:#6b6b8a;--muted2:#9999b8;
+  --accent:#6c5ce7;--accent2:#a29bfe;--accent3:#ddd6fe;
+  --glow:rgba(108,92,231,0.12);--glow2:rgba(108,92,231,0.25);
+  --success:#00d68f;--warning:#ffb347;--danger:#ff6b6b;
+  --nano:#fd79a8;--ideo:#00cec9;
+  --radius:14px;--radius-sm:8px;--radius-xs:5px;
+  --font-d:'Space Grotesk',sans-serif;--font-b:'Inter',sans-serif;
+}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;line-height:1.6;overflow-x:hidden}
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+
+/* Sidebar */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.logo-mark{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),#a29bfe);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:700;font-size:14px;color:#fff;margin-bottom:10px}
+.logo h1{font-family:var(--font-d);font-size:15px;font-weight:600;letter-spacing:-.3px}
+.logo p{font-size:11px;color:var(--muted);margin-top:2px}
+.nav-section{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:20px 20px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;margin:1px 8px;border-radius:var(--radius-sm);cursor:pointer;color:var(--muted2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:calc(100% - 16px);text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--glow);color:var(--accent2);border:1px solid rgba(108,92,231,.2)}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .15s}
+.nav-item.active .nav-dot{background:var(--accent2)}
+.nav-item.done .nav-dot{background:var(--success)}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border)}
+.mcp-pill{background:var(--glow);border:1px solid rgba(108,92,231,.2);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px}
+.mcp-pill .mcp-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-weight:600;color:var(--accent2)}
+.mcp-pill p{color:var(--muted);font-size:10px}
+
+/* Main */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+.topbar-left h2{font-family:var(--font-d);font-size:16px;font-weight:600;letter-spacing:-.3px}
+.topbar-left p{font-size:12px;color:var(--muted);margin-top:1px}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.content{padding:32px;flex:1}
+
+/* Steps */
+.steps{display:flex;align-items:center;margin-bottom:28px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px}
+.step{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;color:var(--muted);transition:all .2s}
+.step.active{background:var(--glow);color:var(--accent2)}
+.step.done{color:var(--success)}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.step.active .step-num{background:var(--accent);border-color:var(--accent);color:#fff}
+.step.done .step-num{background:var(--success);border-color:var(--success);color:#000}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.card-title{font-family:var(--font-d);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:100px;background:var(--glow);color:var(--accent2);border:1px solid rgba(108,92,231,.2)}
+.model-tag-nano{font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(253,121,168,.12);color:var(--nano);border:1px solid rgba(253,121,168,.2);font-weight:600}
+.model-tag-ideo{font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(0,206,201,.1);color:var(--ideo);border:1px solid rgba(0,206,201,.2);font-weight:600}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--surface2);border:1px solid var(--border);padding:3px;border-radius:var(--radius-sm)}
+.tab{flex:1;padding:8px 14px;border-radius:6px;border:none;background:none;color:var(--muted2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:var(--font-b)}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:block;font-size:11px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+input[type=text],input[type=password],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;font-family:var(--font-b);transition:all .15s;outline:none;appearance:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--glow)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+textarea{resize:vertical;min-height:90px}
+select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b8a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+select option{background:var(--surface2)}
+
+/* Upload */
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);position:relative}
+.upload-zone:hover{border-color:var(--accent);background:var(--glow)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.photo-thumb{width:64px;height:64px;border-radius:var(--radius-sm);object-fit:cover;border:1px solid var(--border2)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font-b);white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#8b7cf8);color:#fff;box-shadow:0 4px 15px rgba(108,92,231,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(108,92,231,.4)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent2)}
+.btn-success{background:var(--success);color:#000;font-weight:700}
+.btn-success:hover{background:#00c07f;transform:translateY(-1px)}
+.btn-danger{background:rgba(255,107,107,.1);color:var(--danger);border:1px solid rgba(255,107,107,.2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:5px}
+
+/* Image grid */
+.image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px}
+.img-slot{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);aspect-ratio:1;position:relative;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.img-slot:hover{border-color:var(--accent)}
+.img-slot img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0}
+.img-slot-label{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.9));padding:24px 10px 10px;font-size:11px;font-weight:600;color:#fff}
+.img-slot-model{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);border-radius:4px;padding:2px 7px;font-size:10px;color:var(--muted2);border:1px solid rgba(255,255,255,.08)}
+.img-slot-actions{position:absolute;top:8px;left:8px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.img-slot:hover .img-slot-actions{opacity:1}
+.img-slot-btn{background:rgba(0,0,0,.75);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.1);color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:background .15s}
+.img-slot-btn:hover{background:rgba(108,92,231,.6)}
+.img-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted)}
+.img-placeholder-icon{font-size:24px;opacity:.35}
+.img-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--surface2)}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.pulse{animation:pulse 1.5s ease-in-out infinite}
+
+/* Progress */
+.progress-wrap{background:var(--surface2);border-radius:100px;height:3px;margin:10px 0;overflow:hidden}
+.progress-bar{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600}
+.badge-purple{background:var(--glow);color:var(--accent2);border:1px solid rgba(108,92,231,.25)}
+.badge-green{background:rgba(0,214,143,.08);color:var(--success);border:1px solid rgba(0,214,143,.2)}
+.badge-yellow{background:rgba(255,179,71,.08);color:var(--warning);border:1px solid rgba(255,179,71,.2)}
+.badge-red{background:rgba(255,107,107,.08);color:var(--danger);border:1px solid rgba(255,107,107,.2)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* Prompts */
+.prompt-list{display:flex;flex-direction:column;gap:8px}
+.prompt-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;display:flex;gap:12px}
+.prompt-num{width:24px;height:24px;border-radius:50%;background:var(--glow);color:var(--accent2);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prompt-body{flex:1}
+.prompt-type{font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.prompt-text{font-size:12px;color:var(--muted2);line-height:1.6}
+.prompt-neg{font-size:10px;color:var(--muted);margin-top:5px}
+
+/* Log */
+.log{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-family:'SF Mono',monospace;font-size:11px;color:var(--muted);max-height:140px;overflow-y:auto;line-height:1.8;margin-top:14px}
+.log .ok{color:var(--success)}.log .err{color:var(--danger)}.log .info{color:var(--accent2)}
+
+/* Editor */
+.editor-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+.canvas-wrap{background:#000;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative}
+#editor-canvas{width:100%;display:block;cursor:crosshair}
+.spot-overlay{position:absolute;inset:0;cursor:crosshair;opacity:0;transition:opacity .2s}
+.spot-active .spot-overlay{opacity:1}
+.editor-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:14px;max-height:80vh;overflow-y:auto}
+.ep-section{font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.thumb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.thumb-item{aspect-ratio:1;border-radius:5px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;background:var(--surface2)}
+.thumb-item img{width:100%;height:100%;object-fit:cover}
+.thumb-item.selected{border-color:var(--accent)}
+.thumb-item-empty{display:flex;align-items:center;justify-content:center;font-size:14px;opacity:.3}
+.layer-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:var(--surface2);cursor:pointer;border:1px solid transparent;transition:all .1s;font-size:12px}
+.layer-item.selected{border-color:var(--accent);background:var(--glow);color:var(--accent2)}
+.color-row{display:flex;gap:5px;flex-wrap:wrap}
+.color-swatch{width:20px;height:20px;border-radius:4px;border:1px solid var(--border2);cursor:pointer;transition:transform .1s}
+.color-swatch:hover{transform:scale(1.2)}
+.spot-mask-area{position:absolute;border:2px dashed rgba(255,200,0,.8);background:rgba(255,200,0,.15);border-radius:4px;pointer-events:none}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:14px 0}
+.row{display:flex;gap:10px;align-items:center}
+.spacer{flex:1}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;font-size:13px;box-shadow:0 8px 40px rgba(0,0,0,.5);display:flex;align-items:center;gap:10px;transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:rgba(0,214,143,.3)}.toast.error{border-color:rgba(255,107,107,.3)}.toast.info{border-color:rgba(108,92,231,.3)}
+
+/* Panels */
+.panel{display:none}.panel.active{display:block}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* Spot edit */
+.spot-toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.spot-mode-btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.spot-mode-btn.active{background:rgba(255,179,71,.1);color:var(--warning);border-color:rgba(255,179,71,.3)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">LA</div>
+    <h1>Listing Agent</h1>
+    <p>Amazon image generator</p>
+  </div>
+  <div class="nav-section">Workflow</div>
+  <button class="nav-item active" id="nav-input" onclick="showPanel('input')"><div class="nav-dot"></div>Product input</button>
+  <button class="nav-item" id="nav-prompts" onclick="showPanel('prompts')"><div class="nav-dot"></div>AI prompts</button>
+  <button class="nav-item" id="nav-generate" onclick="showPanel('generate')"><div class="nav-dot"></div>Generate images</button>
+  <button class="nav-item" id="nav-editor" onclick="showPanel('editor')"><div class="nav-dot"></div>Edit & spot edit</button>
+  <button class="nav-item" id="nav-export" onclick="showPanel('export')"><div class="nav-dot"></div>Export to Canva</button>
+  <div class="nav-section">Config</div>
+  <button class="nav-item" id="nav-settings" onclick="showPanel('settings')"><div class="nav-dot"></div>Settings</button>
+  <div class="sidebar-footer">
+    <div class="mcp-pill">
+      <div class="mcp-row">🔮 Magnific MCP</div>
+      <p>Connected · Google Nano Banana Pro + Ideogram 4</p>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2 id="panel-title">Product input</h2>
+      <p id="panel-sub">Tell the agent about your product</p>
+    </div>
+    <div class="topbar-right">
+      <span id="status-badge" class="badge badge-purple"><span class="badge-dot"></span> Ready</span>
+      <button class="btn btn-primary" id="main-btn" onclick="handleMainAction()">Generate prompts →</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- INPUT PANEL -->
+  <div class="panel active" id="panel-input">
+    <div class="steps">
+      <div class="step active" id="step1"><div class="step-num">1</div>Product</div>
+      <div class="step" id="step2"><div class="step-num">2</div>Prompts</div>
+      <div class="step" id="step3"><div class="step-num">3</div>Generate</div>
+      <div class="step" id="step4"><div class="step-num">4</div>Edit</div>
+      <div class="step" id="step5"><div class="step-num">5</div>Export</div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('manual')">✏️ Manual entry</button>
+      <button class="tab" onclick="switchTab('asin')">🔍 Amazon ASIN</button>
+      <button class="tab" onclick="switchTab('photos')">📷 Upload photos</button>
+    </div>
+    <div class="tab-panel active" id="tab-manual">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Product details</div><span class="card-tag">Manual</span></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Product name *</label><input type="text" id="p-name" placeholder="e.g. AquaFlow Insulated Water Bottle" /></div>
+          <div class="form-group"><label>Brand name</label><input type="text" id="p-brand" placeholder="e.g. AquaFlow" /></div>
+        </div>
+        <div class="form-group"><label>Key features (one per line) *</label><textarea id="p-features" placeholder="Keeps drinks cold 24 hours&#10;BPA-free Tritan plastic&#10;Leak-proof magnetic lid&#10;500ml capacity&#10;Dishwasher safe"></textarea></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Target customer *</label><input type="text" id="p-audience" placeholder="e.g. Active women aged 20–35, gym-goers" /></div>
+          <div class="form-group"><label>Amazon category</label>
+            <select id="p-category"><option value="">Select...</option><option>Sports & Outdoors</option><option>Health & Beauty</option><option>Kitchen & Home</option><option>Electronics</option><option>Clothing & Apparel</option><option>Toys & Games</option><option>Pet Supplies</option><option>Baby & Toddler</option><option>Tools & Hardware</option><option>Food & Grocery</option><option>Other</option></select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Colours / variants</label><input type="text" id="p-colors" placeholder="e.g. Midnight black, blush pink" /></div>
+          <div class="form-group"><label>Brand style / mood</label><input type="text" id="p-style" placeholder="e.g. Premium, minimal, clean" /></div>
+        </div>
+        <div class="form-group"><label>Additional notes</label><textarea id="p-notes" placeholder="Competitors, key differences, specific shots you want..." style="min-height:60px"></textarea></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-asin">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Amazon ASIN lookup</div><span class="card-tag">Auto-fill</span></div>
+        <div class="row" style="margin-bottom:14px">
+          <div class="form-group" style="flex:1;margin:0"><label>ASIN</label><input type="text" id="p-asin" placeholder="e.g. B08N5KWB9H" maxlength="12"/></div>
+          <button class="btn btn-ghost" style="margin-top:18px" onclick="lookupASIN()">Look up</button>
+        </div>
+        <div class="form-group"><label>Additional details</label><textarea id="p-asin-extra" placeholder="Target customer, brand style, specific shots..."></textarea></div>
+        <div id="asin-result" style="display:none;margin-top:12px"></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="tab-photos">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Upload product photos</div><span class="card-tag">Reference</span></div>
+        <div class="upload-zone">
+          <input type="file" id="photo-upload" accept="image/*" multiple onchange="handlePhotos(this)"/>
+          <div style="font-size:28px;margin-bottom:8px;opacity:.4">📸</div>
+          <p style="color:var(--muted2)">Drop photos here or click to browse</p>
+          <small style="color:var(--muted)">JPG, PNG, WEBP — up to 10 photos</small>
+        </div>
+        <div class="photo-grid" id="photo-previews"></div>
+        <div class="form-group" style="margin-top:16px"><label>Describe your product</label><textarea id="p-photo-desc" placeholder="Product name, features, target customer, brand style..."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPTS PANEL -->
+  <div class="panel" id="panel-prompts">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">7 listing image prompts
+          <span class="model-tag-nano">Nano Banana Pro</span>
+          <span class="model-tag-ideo">Ideogram 4</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="regeneratePrompts()">↺ Regenerate</button>
+      </div>
+      <div id="prompts-loading" style="text-align:center;padding:40px">
+        <div class="spinner" style="margin:0 auto 12px"></div>
+        <p class="pulse" style="color:var(--muted2)">Claude is writing your prompts...</p>
+      </div>
+      <div id="prompts-list" class="prompt-list" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- GENERATE PANEL -->
+  <div class="panel" id="panel-generate">
+    <div class="row" style="margin-bottom:20px">
+      <div>
+        <div style="font-family:var(--font-d);font-size:15px;font-weight:600">Generated images</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px" id="gen-status">Ready — Google Nano Banana Pro + Ideogram 4 via Magnific MCP</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost btn-sm" onclick="startGeneration()" id="gen-btn">⚡ Generate all 7</button>
+    </div>
+    <div class="progress-wrap" id="gen-progress-wrap" style="display:none"><div class="progress-bar" id="gen-progress" style="width:0%"></div></div>
+    <div class="image-grid" id="image-grid"></div>
+    <div class="log" id="gen-log" style="display:none"></div>
+  </div>
+
+  <!-- EDITOR PANEL -->
+  <div class="panel" id="panel-editor">
+    <div class="row" style="margin-bottom:16px">
+      <div>
+        <div style="font-family:var(--font-d);font-size:15px;font-weight:600">Edit & spot edit</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Add text layers, spot-edit areas, upscale and remove backgrounds via Magnific</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost btn-sm" onclick="upscaleSelected()">🔮 Upscale</button>
+      <button class="btn btn-ghost btn-sm" onclick="removeBackground()">✂️ Remove BG</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEdited()">💾 Save</button>
+    </div>
+
+    <div class="editor-layout">
+      <div>
+        <!-- Spot edit toolbar -->
+        <div class="spot-toolbar">
+          <span style="font-size:11px;color:var(--muted2);font-weight:600">Mode:</span>
+          <button class="spot-mode-btn active" id="mode-select" onclick="setMode('select')">👆 Select</button>
+          <button class="spot-mode-btn" id="mode-text" onclick="setMode('text')">T Text</button>
+          <button class="spot-mode-btn" id="mode-spot" onclick="setMode('spot')">🎨 Spot edit</button>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost btn-xs" onclick="exportCanvas()">⬇ Export PNG</button>
+        </div>
+        <div class="canvas-wrap" id="canvas-wrap">
+          <canvas id="editor-canvas" width="600" height="600"></canvas>
+          <!-- Spot edit overlay -->
+          <canvas id="spot-canvas" width="600" height="600" style="position:absolute;inset:0;width:100%;opacity:0;transition:opacity .2s;cursor:crosshair"></canvas>
+        </div>
+        <!-- Spot edit controls -->
+        <div id="spot-controls" style="display:none;margin-top:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+          <div style="font-size:12px;font-weight:600;color:var(--warning);margin-bottom:8px">🎨 Spot edit — draw a box over the area to change</div>
+          <div class="form-group" style="margin-bottom:10px">
+            <label>What do you want in this area?</label>
+            <input type="text" id="spot-prompt" placeholder="e.g. Add a lemon slice next to the bottle" />
+          </div>
+          <div class="row">
+            <button class="btn btn-ghost btn-sm" onclick="clearSpotMask()">Clear selection</button>
+            <button class="btn btn-primary btn-sm" onclick="runSpotEdit()">Apply spot edit via Magnific →</button>
+          </div>
+          <div class="log" id="spot-log" style="display:none;margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div class="editor-panel">
+        <div>
+          <div class="ep-section">Select image</div>
+          <div class="thumb-grid" id="editor-thumbs"></div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="ep-section">Text layers</div>
+          <div id="layer-list" style="display:flex;flex-direction:column;gap:5px"></div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="addTextLayer()">+ Add text</button>
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:5px" onclick="addBadge()">+ Add badge</button>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="ep-section">Text colour</div>
+          <div class="color-row" id="color-row">
+            <div class="color-swatch" style="background:#ffffff" onclick="setColor('#ffffff')"></div>
+            <div class="color-swatch" style="background:#000000" onclick="setColor('#000000')"></div>
+            <div class="color-swatch" style="background:#6c5ce7" onclick="setColor('#6c5ce7')"></div>
+            <div class="color-swatch" style="background:#e17055" onclick="setColor('#e17055')"></div>
+            <div class="color-swatch" style="background:#00b894" onclick="setColor('#00b894')"></div>
+            <div class="color-swatch" style="background:#fdcb6e" onclick="setColor('#fdcb6e')"></div>
+            <div class="color-swatch" style="background:#fd79a8" onclick="setColor('#fd79a8')"></div>
+            <div class="color-swatch" style="background:#00cec9" onclick="setColor('#00cec9')"></div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <input type="text" id="custom-color" placeholder="#hex" style="font-size:11px;padding:6px 10px"/>
+            <button class="btn btn-ghost btn-xs" onclick="addCustomColor()">Add</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="ep-section">Font size — <span id="font-size-label">32px</span></div>
+          <input type="range" id="font-size-range" min="10" max="100" value="32" style="width:100%;accent-color:var(--accent)" oninput="updateFontSize(this.value)"/>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="ep-section">Regenerate with Ideogram 4</div>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:8px">Generate fresh text/infographic version of current image</p>
+          <div class="form-group" style="margin-bottom:8px">
+            <input type="text" id="ideo-prompt" placeholder="Describe the infographic style..." style="font-size:11px;padding:7px 10px"/>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="regenWithIdeogram()">Generate with Ideogram 4 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT PANEL -->
+  <div class="panel" id="panel-export">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Export to Canva</div>
+        <span class="badge badge-green"><span class="badge-dot"></span> Canva MCP connected</span>
+      </div>
+      <div style="background:var(--glow);border:1px solid rgba(108,92,231,.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--accent3);line-height:1.7">
+        🎨 Each image is pushed as a <strong>separate editable page</strong> in Canva. Background-removed product layers are placed separately from the scene, so you have full layer control. Text elements from your editor are also preserved as editable Canva text.
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Design name</label><input type="text" id="canva-name" placeholder="e.g. Water Bottle Listing v1"/></div>
+        <div class="form-group"><label>Canvas size</label>
+          <select id="canva-size"><option value="2000">2000 × 2000 (Amazon standard)</option><option value="1500">1500 × 1500</option><option value="1000">1000 × 1000</option></select>
+        </div>
+      </div>
+      <div class="image-grid" id="export-preview" style="margin-bottom:20px"></div>
+      <div class="row">
+        <button class="btn btn-success" id="canva-btn" onclick="exportToCanva()">Push to Canva with layers →</button>
+        <button class="btn btn-ghost" onclick="downloadAll()">⬇ Download all JPEGs</button>
+      </div>
+      <div class="log" id="canva-log" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="panel-settings">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Configuration</div></div>
+      <div style="background:var(--glow);border:1px solid rgba(108,92,231,.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--accent3)">
+        🔮 <strong>Magnific MCP connected</strong> — using Google Nano Banana Pro for photorealistic images and Ideogram 4 for text/infographic images. No extra API keys needed for generation.
+      </div>
+      <div class="form-group">
+        <label>Anthropic API key <span style="font-weight:400;text-transform:none;color:var(--muted)">(powers AI prompts, ASIN lookup, MCP orchestration)</span></label>
+        <div class="row">
+          <input type="password" id="anthropic-key" placeholder="sk-ant-..." oninput="saveSettings()" style="flex:1"/>
+          <button class="btn btn-ghost btn-sm" onclick="testAnthropic()">Test</button>
+        </div>
+        <p id="anthropic-status" style="font-size:11px;margin-top:5px"></p>
+      </div>
+      <div class="form-group">
+        <label>remove.bg API key <span style="font-weight:400;text-transform:none;color:var(--muted)">(optional — extra background removal)</span></label>
+        <input type="password" id="removebg-key" placeholder="your-key..." oninput="saveSettings()"/>
+      </div>
+      <div class="divider"></div>
+      <div class="card-title" style="margin-bottom:16px">Image generation defaults</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Photorealistic model</label>
+          <select id="photo-model"><option value="imagen-nano-banana-2">Google Nano Banana Pro ⭐</option><option value="imagen-nano-banana-2-flash">Google Nano Banana 2</option><option value="imagen-nano-banana">Google Nano Banana</option><option value="flux-pro-1.1">Flux Pro 1.1</option></select>
+        </div>
+        <div class="form-group">
+          <label>Text/infographic model</label>
+          <select id="text-model"><option value="ideogram-4">Ideogram 4 ⭐</option><option value="ideogram">Ideogram</option></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Resolution</label>
+          <select id="gen-resolution"><option value="2k">2K (recommended)</option><option value="1k">1K</option><option value="4k">4K (slow)</option></select>
+        </div>
+        <div class="form-group">
+          <label>Images per slot</label>
+          <select id="gen-count"><option value="1">1 image</option><option value="2">2 — pick best</option></select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveAndConfirm()">Save settings</button>
+    </div>
+  </div>
+
+  </div><!-- /content -->
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const IMAGE_TYPES = [
+  { id:'hero',        label:'Hero shot',         emoji:'⭐', model:'nano',  desc:'Product on pure white bg, 85%+ frame fill, studio lit' },
+  { id:'lifestyle',   label:'Lifestyle scene',    emoji:'🌿', model:'nano',  desc:'Product in aspirational setting with target customer' },
+  { id:'features',    label:'Feature callouts',   emoji:'📋', model:'ideo',  desc:'Product with clear text callouts for 3-4 key features' },
+  { id:'detail',      label:'Detail close-up',    emoji:'🔍', model:'nano',  desc:'Extreme close-up of material quality and texture' },
+  { id:'infographic', label:'Infographic',         emoji:'📊', model:'ideo',  desc:'Clean graphic with dimensions, specs or usage steps' },
+  { id:'comparison',  label:'Comparison chart',   emoji:'📈', model:'ideo',  desc:'vs competitors table with clear tick advantages' },
+  { id:'inaction',    label:'In-action shot',     emoji:'⚡', model:'nano',  desc:'Product actively used by target customer' },
+];
+
+const MODEL_SLUGS = {
+  nano: 'imagen-nano-banana-2',
+  ideo: 'ideogram-4'
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const S = {
+  tab:'manual', productInfo:null, prompts:[],
+  images:new Array(7).fill(null), creationIds:new Array(7).fill(null),
+  editorIndex:0, textLayers:[], selectedColor:'#ffffff', fontSize:32,
+  bgImage:null, photos:[],
+  spotMode:'select', spotRect:null, spotDrawing:false, spotStart:null,
+  currentMode:'select'
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
+  buildImageGrid();
+  initCanvas();
+  initSpotCanvas();
+});
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+const PANELS = {
+  input:    {title:'Product input',      sub:'Tell the agent about your product',          btn:'Generate prompts →',   action:'handleMainAction()'},
+  prompts:  {title:'AI prompts',         sub:'Review before generating',                   btn:'Generate images →',    action:'goGenerate()'},
+  generate: {title:'Generate images',    sub:'Google Nano Banana Pro + Ideogram 4 via Magnific MCP', btn:'Edit images →', action:'goEditor()'},
+  editor:   {title:'Edit & spot edit',   sub:'Add text, spot-edit areas, enhance via Magnific', btn:'Export to Canva →', action:'goExport()'},
+  export:   {title:'Export to Canva',    sub:'Push layered designs to your Canva account', btn:'Done ✓',              action:''},
+  settings: {title:'Settings',           sub:'API keys and generation options',             btn:'Save',                action:'saveAndConfirm()'},
+};
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('nav-'+name)?.classList.add('active');
+  const cfg=PANELS[name];
+  document.getElementById('panel-title').textContent=cfg.title;
+  document.getElementById('panel-sub').textContent=cfg.sub;
+  document.getElementById('main-btn').textContent=cfg.btn;
+  document.getElementById('main-btn').setAttribute('onclick',cfg.action);
+  document.getElementById('main-btn').style.display=cfg.action?'':'none';
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>{if(t.getAttribute('onclick').includes("'"+name+"'"))t.classList.add('active')});
+  S.tab=name;
+}
+
+function setStep(n) {
+  for(let i=1;i<=5;i++){
+    const el=document.getElementById('step'+i);
+    if(!el)continue;
+    el.classList.remove('active','done');
+    if(i<n)el.classList.add('done');
+    if(i===n)el.classList.add('active');
+  }
+}
+
+function goGenerate(){showPanel('generate');setStep(3);if(S.images.filter(Boolean).length===0)startGeneration();}
+function goEditor(){showPanel('editor');setStep(4);buildEditorThumbs();if(S.images[S.editorIndex])loadImageToCanvas(S.editorIndex);}
+function goExport(){showPanel('export');setStep(5);buildExportPreview();}
+
+// ─── PRODUCT INFO ─────────────────────────────────────────────────────────────
+function getProductInfo(){
+  if(S.tab==='manual') return {name:v('p-name'),brand:v('p-brand'),features:v('p-features'),audience:v('p-audience'),category:v('p-category'),colors:v('p-colors'),style:v('p-style'),notes:v('p-notes'),source:'manual'};
+  if(S.tab==='asin') return {asin:v('p-asin'),extra:v('p-asin-extra'),source:'asin'};
+  return {description:v('p-photo-desc'),photos:S.photos,source:'photos'};
+}
+
+function productToText(info){
+  if(info.source==='manual') return ['Product: '+(info.name||'Unknown'),'Brand: '+(info.brand||'Unknown'),'Category: '+(info.category||'General'),'Key features:\n'+(info.features||'Not specified'),'Target customer: '+(info.audience||'Not specified'),'Colours: '+(info.colors||'Not specified'),'Brand style: '+(info.style||'Not specified'),'Notes: '+(info.notes||'None')].join('\n');
+  if(info.source==='asin') return 'Amazon ASIN: '+info.asin+'\nExtra: '+info.extra;
+  return 'Product: '+info.description;
+}
+
+// ─── ASIN LOOKUP ──────────────────────────────────────────────────────────────
+async function lookupASIN(){
+  const asin=v('p-asin');if(!asin){toast('Enter an ASIN first','error');return;}
+  const key=getKey('anthropic');if(!key){toast('Add Anthropic API key in Settings','error');return;}
+  const btn=document.querySelector('[onclick="lookupASIN()"]');
+  btn.textContent='Searching...';btn.disabled=true;
+  const resultEl=document.getElementById('asin-result');resultEl.style.display='none';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,tools:[{type:'web_search_20250305',name:'web_search'}],system:'Search for this Amazon product by ASIN and return ONLY a JSON object with: name, brand, category, features (string array), price, rating, description. No markdown.',messages:[{role:'user',content:'Find Amazon ASIN: '+asin+'. Return JSON only.'}]})});
+    const data=await res.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=text.replace(/```json|```/g,'').match(/\{[\s\S]*\}/);
+    if(match){
+      const p=JSON.parse(match[0]);
+      document.getElementById('p-name').value=p.name||'';
+      document.getElementById('p-brand').value=p.brand||'';
+      document.getElementById('p-features').value=Array.isArray(p.features)?p.features.join('\n'):(p.features||'');
+      resultEl.style.display='block';
+      resultEl.innerHTML='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px"><div style="font-weight:600;margin-bottom:4px">'+(p.name||'')+'</div><div style="color:var(--muted2)">'+(p.brand||'')+(p.price?' · '+p.price:'')+(p.rating?' · ★'+p.rating:'')+'</div><div style="color:var(--success);margin-top:6px">✓ Details filled in — review in Manual Entry tab</div></div>';
+      toast('Product found','success');
+    }else throw new Error('Could not parse response');
+  }catch(e){toast('Lookup failed: '+e.message,'error');}
+  btn.textContent='Look up';btn.disabled=false;
+}
+
+function handlePhotos(input){
+  const files=Array.from(input.files).slice(0,10);
+  const prev=document.getElementById('photo-previews');prev.innerHTML='';S.photos=[];
+  files.forEach(file=>{const reader=new FileReader();reader.onload=e=>{S.photos.push(e.target.result);const img=document.createElement('img');img.src=e.target.result;img.className='photo-thumb';prev.appendChild(img);};reader.readAsDataURL(file);});
+}
+
+// ─── MAIN ACTION ──────────────────────────────────────────────────────────────
+function handleMainAction(){
+  const info=getProductInfo();
+  if(!info.name&&!info.asin&&!info.description){toast('Fill in product details first','error');return;}
+  S.productInfo=info;
+  const ne=document.getElementById('canva-name');if(ne&&!ne.value)ne.value=(info.name||'My Product')+' — Amazon Listing';
+  showPanel('prompts');setStep(2);generatePrompts(info);
+}
+
+// ─── GENERATE PROMPTS ─────────────────────────────────────────────────────────
+async function generatePrompts(info){
+  document.getElementById('prompts-loading').style.display='block';
+  document.getElementById('prompts-list').style.display='none';
+  setBadge('yellow','Writing prompts...');
+  const key=getKey('anthropic');
+  const pt=productToText(info);
+
+  if(!key){
+    await delay(900);
+    S.prompts=IMAGE_TYPES.map(t=>({type:t.id,label:t.label,model:t.model==='nano'?'nano':'ideo',prompt:'[Demo] '+t.desc+'. '+pt.split('\n')[0]+'. Professional Amazon listing photography.',negative:'blurry, dark, low quality, watermarks, text errors'}));
+    renderPrompts();setBadge('yellow','Demo mode');toast('Add Anthropic API key for real AI prompts','info');return;
+  }
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,system:'You are an Amazon listing image strategist. Write highly specific, conversion-optimised prompts. Return ONLY a valid JSON array, no markdown.',messages:[{role:'user',content:'Create 7 Amazon listing image prompts for:\n\n'+pt+'\n\nReturn a JSON array of exactly 7 objects, each with:\n- "type": hero|lifestyle|features|detail|infographic|comparison|inaction\n- "label": display name\n- "model": "nano" for photorealistic OR "ideo" for text/graphics/charts\n- "prompt": highly specific 2-4 sentence prompt tailored to THIS exact product\n- "negative": what to avoid\n\nRules:\n- hero,lifestyle,detail,inaction → nano (Google Nano Banana Pro)\n- features,infographic,comparison → ideo (Ideogram 4)\n- Hero: pure white background, product 85%+ frame fill\n- Include lighting, angle, mood, composition\n- Ideogram prompts must clearly specify all text content to appear in the image\n\nReturn only the JSON array.'}]})});
+    const data=await res.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=text.replace(/```json|```/g,'').match(/\[[\s\S]*\]/);
+    if(!match)throw new Error('No JSON array found');
+    S.prompts=JSON.parse(match[0]);
+    renderPrompts();setBadge('green','Prompts ready');toast('7 prompts ready','success');
+  }catch(e){
+    document.getElementById('prompts-loading').innerHTML='<p style="color:var(--danger);text-align:center">Error: '+e.message+'</p>';
+    setBadge('red','Error');
+  }
+}
+
+function renderPrompts(){
+  document.getElementById('prompts-loading').style.display='none';
+  const list=document.getElementById('prompts-list');list.style.display='flex';list.innerHTML='';
+  S.prompts.forEach((p,i)=>{
+    const t=IMAGE_TYPES.find(t=>t.id===p.type)||IMAGE_TYPES[i];
+    const isIde=p.model==='ideo';
+    list.innerHTML+=`<div class="prompt-item">
+      <div class="prompt-num">${i+1}</div>
+      <div class="prompt-body">
+        <div class="prompt-type">${p.label||t?.label} <span class="${isIde?'model-tag-ideo':'model-tag-nano'}">${isIde?'Ideogram 4':'Nano Banana Pro'}</span></div>
+        <div class="prompt-text">${p.prompt}</div>
+        ${p.negative?'<div class="prompt-neg">Avoid: '+p.negative+'</div>':''}
+      </div>
+    </div>`;
+  });
+}
+
+async function regeneratePrompts(){if(!S.productInfo){toast('Go back to Product input first','error');return;}generatePrompts(S.productInfo);}
+
+// ─── GENERATE IMAGES ──────────────────────────────────────────────────────────
+async function startGeneration(){
+  if(!S.prompts.length){toast('Generate prompts first','error');showPanel('prompts');return;}
+  const log=document.getElementById('gen-log');
+  log.style.display='block';log.innerHTML='';
+  document.getElementById('gen-progress-wrap').style.display='block';
+  document.getElementById('gen-btn').disabled=true;
+  document.getElementById('gen-status').textContent='Generating via Magnific MCP...';
+  setBadge('yellow','Generating...');
+
+  let done=0;
+  for(let i=0;i<S.prompts.length;i++){
+    const p=S.prompts[i];
+    const t=IMAGE_TYPES.find(t=>t.id===p.type)||IMAGE_TYPES[i];
+    const modelName=p.model==='ideo'?'Ideogram 4':'Nano Banana Pro';
+    addLog(log,'info','['+(i+1)+'/7] '+t?.label+' via '+modelName+'...');
+    showSlotLoading(i,true);
+    try{
+      const url=await generateImage(p,i);
+      S.images[i]=url;
+      showSlotImage(i,url);
+      addLog(log,'ok','✓ '+(p.label||t?.label)+' done');
+    }catch(e){
+      addLog(log,'err','✗ '+(p.label||t?.label)+': '+e.message);
+      showSlotLoading(i,false);
+    }
+    done++;
+    document.getElementById('gen-progress').style.width=(done/7*100)+'%';
+  }
+
+  document.getElementById('gen-status').textContent=done+'/7 images generated';
+  document.getElementById('gen-btn').disabled=false;
+  setBadge('green','Images ready');
+  toast(done+' images generated via Magnific','success');
+  buildExportPreview();
+}
+
+async function generateImage(promptObj,index){
+  const key=getKey('anthropic');
+  const isIdeo=promptObj.model==='ideo';
+  const modelSlug=isIdeo?(document.getElementById('text-model')?.value||MODEL_SLUGS.ideo):(document.getElementById('photo-model')?.value||MODEL_SLUGS.nano);
+  const resolution=document.getElementById('gen-resolution')?.value||'2k';
+
+  if(!key){
+    await delay(600+Math.random()*800);
+    const colors=['6c5ce7','a29bfe','fd79a8','fdcb6e','00b894','74b9ff','e17055'];
+    return 'https://placehold.co/600x600/'+colors[index%colors.length]+'/ffffff?text='+encodeURIComponent((promptObj.label||'Image '+(index+1)).replace(/ /g,'+'));
+  }
+
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-6',max_tokens:512,
+      mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],
+      system:'Use Magnific MCP to generate an image. After generation call creations_show then return the image URL on its own line.',
+      messages:[{role:'user',content:'Generate a 1:1 image using Magnific with model slug "'+modelSlug+'" and resolution "'+resolution+'".\n\nPrompt: "'+promptObj.prompt+'"\n\nNegative prompt: "'+(promptObj.negative||'')+'"\n\nAfter generating, return the image URL.'}]
+    })
+  });
+
+  if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||'API error '+res.status);}
+  const data=await res.json();
+  const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+  const urlMatch=text.match(/https?:\/\/\S+\.(jpg|jpeg|png|webp)\S*/i)||text.match(/https?:\/\/[^\s"'<>]+/);
+  if(urlMatch)return urlMatch[0];
+  throw new Error('No image URL returned from Magnific');
+}
+
+async function regenerateOne(index){
+  const p=S.prompts[index];if(!p){toast('No prompt for this slot','error');return;}
+  showSlotLoading(index,true);
+  try{const url=await generateImage(p,index);S.images[index]=url;showSlotImage(index,url);buildExportPreview();toast('Image regenerated','success');}
+  catch(e){toast('Failed: '+e.message,'error');showSlotLoading(index,false);}
+}
+
+// ─── IMAGE GRID ───────────────────────────────────────────────────────────────
+function buildImageGrid(){
+  const grid=document.getElementById('image-grid');grid.innerHTML='';
+  IMAGE_TYPES.forEach((t,i)=>{
+    const isIde=t.model==='ideo';
+    grid.innerHTML+=`<div class="img-slot" id="slot-${i}">
+      <div class="img-placeholder" id="placeholder-${i}"><div class="img-placeholder-icon">${t.emoji}</div><span>${t.label}</span></div>
+      <div class="img-loading" id="loading-${i}" style="display:none"><div class="spinner"></div><span class="pulse" style="font-size:11px;color:var(--muted2)">Generating...</span></div>
+      <img id="img-${i}" style="display:none" onclick="openInEditor(${i})"/>
+      <div class="img-slot-label">${t.label}</div>
+      <div class="img-slot-model">${isIde?'Ideogram 4':'Nano Banana Pro'}</div>
+      <div class="img-slot-actions">
+        <button class="img-slot-btn" onclick="regenerateOne(${i})" title="Regenerate">↺</button>
+        <button class="img-slot-btn" onclick="openInEditor(${i})" title="Edit">✏️</button>
+        <button class="img-slot-btn" onclick="downloadOne(${i})" title="Download">⬇</button>
+      </div>
+    </div>`;
+  });
+}
+
+function showSlotLoading(i,show){
+  document.getElementById('loading-'+i).style.display=show?'flex':'none';
+  if(show)document.getElementById('img-'+i).style.display='none';
+  document.getElementById('placeholder-'+i).style.display=(show||S.images[i])?'none':'flex';
+}
+
+function showSlotImage(i,url){
+  const img=document.getElementById('img-'+i);img.src=url;img.style.display='block';
+  document.getElementById('loading-'+i).style.display='none';
+  document.getElementById('placeholder-'+i).style.display='none';
+}
+
+function downloadOne(i){const url=S.images[i];if(!url){toast('Not generated yet','error');return;}const a=document.createElement('a');a.href=url;a.download=IMAGE_TYPES[i].id+'.jpg';a.target='_blank';a.click();}
+
+// ─── CANVAS EDITOR ────────────────────────────────────────────────────────────
+let canvas,ctx,spotCanvas,spotCtx;
+
+function initCanvas(){
+  canvas=document.getElementById('editor-canvas');ctx=canvas.getContext('2d');
+  ctx.fillStyle='#1e1e35';ctx.fillRect(0,0,600,600);
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='14px Inter';ctx.textAlign='center';
+  ctx.fillText('Select an image to start editing',300,300);
+}
+
+function initSpotCanvas(){
+  spotCanvas=document.getElementById('spot-canvas');
+  spotCtx=spotCanvas.getContext('2d');
+  let drawing=false,startX,startY;
+
+  spotCanvas.addEventListener('mousedown',e=>{
+    if(S.currentMode!=='spot')return;
+    drawing=true;
+    const rect=spotCanvas.getBoundingClientRect();
+    const scaleX=spotCanvas.width/rect.width;
+    const scaleY=spotCanvas.height/rect.height;
+    startX=(e.clientX-rect.left)*scaleX;
+    startY=(e.clientY-rect.top)*scaleY;
+  });
+
+  spotCanvas.addEventListener('mousemove',e=>{
+    if(!drawing||S.currentMode!=='spot')return;
+    const rect=spotCanvas.getBoundingClientRect();
+    const scaleX=spotCanvas.width/rect.width;
+    const scaleY=spotCanvas.height/rect.height;
+    const curX=(e.clientX-rect.left)*scaleX;
+    const curY=(e.clientY-rect.top)*scaleY;
+    spotCtx.clearRect(0,0,600,600);
+    spotCtx.strokeStyle='rgba(255,200,0,0.9)';
+    spotCtx.lineWidth=2;
+    spotCtx.setLineDash([6,3]);
+    spotCtx.strokeRect(startX,startY,curX-startX,curY-startY);
+    spotCtx.fillStyle='rgba(255,200,0,0.12)';
+    spotCtx.fillRect(startX,startY,curX-startX,curY-startY);
+    S.spotRect={x:Math.min(startX,curX),y:Math.min(startY,curY),w:Math.abs(curX-startX),h:Math.abs(curY-startY)};
+  });
+
+  spotCanvas.addEventListener('mouseup',()=>{
+    drawing=false;
+    if(S.spotRect&&S.spotRect.w>10){
+      document.getElementById('spot-prompt').focus();
+      toast('Area selected — describe what you want there','info');
+    }
+  });
+}
+
+function setMode(mode){
+  S.currentMode=mode;
+  document.querySelectorAll('.spot-mode-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mode-'+mode)?.classList.add('active');
+  spotCanvas.style.opacity=mode==='spot'?'1':'0';
+  spotCanvas.style.pointerEvents=mode==='spot'?'auto':'none';
+  document.getElementById('spot-controls').style.display=mode==='spot'?'block':'none';
+  if(mode!=='spot'){spotCtx.clearRect(0,0,600,600);S.spotRect=null;}
+}
+
+function clearSpotMask(){spotCtx.clearRect(0,0,600,600);S.spotRect=null;toast('Selection cleared','info');}
+
+async function runSpotEdit(){
+  const key=getKey('anthropic');
+  if(!key){toast('Add Anthropic API key in Settings','error');return;}
+  if(!S.spotRect||S.spotRect.w<10){toast('Draw a selection area first','error');return;}
+  const prompt=document.getElementById('spot-prompt').value.trim();
+  if(!prompt){toast('Describe what you want in this area','error');return;}
+  const url=S.images[S.editorIndex];
+  if(!url){toast('No image loaded','error');return;}
+  const log=document.getElementById('spot-log');
+  log.style.display='block';log.innerHTML='';
+  addLog(log,'info','Sending spot edit to Magnific...');
+  const rect=S.spotRect;
+  const maskDesc=`Region: x=${Math.round(rect.x)}, y=${Math.round(rect.y)}, width=${Math.round(rect.w)}, height=${Math.round(rect.h)} (out of 600x600 canvas)`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:512,
+        mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],
+        system:'Use Magnific MCP to edit a specific region of an image. Return only the final image URL.',
+        messages:[{role:'user',content:`Edit a specific region of this image: ${url}\n\n${maskDesc}\n\nWhat to put in this region: "${prompt}"\n\nUse Magnific's image editing tools to apply this change to just the selected region. Keep everything outside the region identical. Return only the resulting image URL.`}]
+      })
+    });
+    const data=await res.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=text.match(/https?:\/\/\S+\.(jpg|jpeg|png|webp)\S*/i)||text.match(/https?:\/\/[^\s"'<>]+/);
+    if(match){
+      S.images[S.editorIndex]=match[0];
+      loadImageToCanvas(S.editorIndex);
+      showSlotImage(S.editorIndex,match[0]);
+      clearSpotMask();
+      addLog(log,'ok','✓ Spot edit applied');
+      toast('Spot edit done','success');
+    }else{addLog(log,'err','No URL returned: '+text.slice(0,100));}
+  }catch(e){addLog(log,'err','Error: '+e.message);}
+}
+
+function openInEditor(index){
+  S.editorIndex=index;
+  const url=S.images[index];
+  if(!url){toast('Generate this image first','error');return;}
+  showPanel('editor');setStep(4);buildEditorThumbs();
+  loadImageToCanvas(index);
+}
+
+function loadImageToCanvas(index){
+  const url=S.images[index];if(!url)return;
+  const img=new Image();img.crossOrigin='anonymous';
+  img.onload=()=>{S.bgImage=img;redrawCanvas();};
+  img.src=url;
+}
+
+function buildEditorThumbs(){
+  const grid=document.getElementById('editor-thumbs');grid.innerHTML='';
+  IMAGE_TYPES.forEach((t,i)=>{
+    const url=S.images[i];
+    const div=document.createElement('div');
+    div.className='thumb-item'+(i===S.editorIndex?' selected':'');
+    div.onclick=()=>openInEditor(i);
+    div.innerHTML=url?'<img src="'+url+'" />':`<div class="thumb-item-empty">${t.emoji}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+function redrawCanvas(){
+  ctx.clearRect(0,0,600,600);
+  if(S.bgImage)ctx.drawImage(S.bgImage,0,0,600,600);
+  S.textLayers.forEach(layer=>{
+    ctx.font=layer.bold?'bold '+layer.fontSize+'px Space Grotesk':layer.fontSize+'px Space Grotesk';
+    ctx.fillStyle=layer.color;ctx.textAlign='center';
+    ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=6;
+    ctx.fillText(layer.text,layer.x,layer.y);
+    ctx.shadowBlur=0;
+  });
+}
+
+function addTextLayer(){
+  const text=prompt('Enter text for this layer:');if(!text)return;
+  S.textLayers.push({text,x:300,y:300,color:S.selectedColor,fontSize:S.fontSize,bold:false});
+  redrawCanvas();renderLayerList();
+}
+
+function addBadge(){
+  const text=prompt('Badge text:')||'✓ Premium Quality';
+  S.textLayers.push({text,x:300,y:80,color:'#ffffff',fontSize:22,bold:true});
+  redrawCanvas();renderLayerList();
+}
+
+function renderLayerList(){
+  const list=document.getElementById('layer-list');list.innerHTML='';
+  S.textLayers.forEach((l,i)=>{
+    const div=document.createElement('div');div.className='layer-item';
+    div.innerHTML='<span style="font-size:11px;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">T '+l.text.slice(0,18)+'</span><button onclick="removeLayer('+i+')" class="btn btn-danger btn-xs">✕</button>';
+    list.appendChild(div);
+  });
+}
+
+function removeLayer(i){S.textLayers.splice(i,1);redrawCanvas();renderLayerList();}
+function setColor(hex){S.selectedColor=hex;}
+function addCustomColor(){const hex=document.getElementById('custom-color').value;if(!/^#[0-9a-f]{3,6}$/i.test(hex)){toast('Invalid hex','error');return;}const s=document.createElement('div');s.className='color-swatch';s.style.background=hex;s.onclick=()=>setColor(hex);document.getElementById('color-row').appendChild(s);setColor(hex);}
+function updateFontSize(val){S.fontSize=parseInt(val);document.getElementById('font-size-label').textContent=val+'px';}
+
+function saveEdited(){
+  const url=canvas.toDataURL('image/jpeg',0.95);
+  S.images[S.editorIndex]=url;
+  showSlotImage(S.editorIndex,url);
+  buildExportPreview();buildEditorThumbs();
+  toast('Image saved','success');
+}
+
+function exportCanvas(){
+  canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=IMAGE_TYPES[S.editorIndex].id+'-edited.png';a.click();
+  },'image/png');
+}
+
+async function regenWithIdeogram(){
+  const key=getKey('anthropic');if(!key){toast('Add Anthropic API key in Settings','error');return;}
+  const prompt=document.getElementById('ideo-prompt').value.trim()||S.prompts[S.editorIndex]?.prompt||'Product infographic with features listed';
+  showSlotLoading(S.editorIndex,true);
+  try{
+    const tempPrompt={...S.prompts[S.editorIndex],prompt,model:'ideo'};
+    const url=await generateImage(tempPrompt,S.editorIndex);
+    S.images[S.editorIndex]=url;loadImageToCanvas(S.editorIndex);showSlotImage(S.editorIndex,url);buildEditorThumbs();
+    toast('Regenerated with Ideogram 4','success');
+  }catch(e){toast('Failed: '+e.message,'error');showSlotLoading(S.editorIndex,false);}
+}
+
+async function upscaleSelected(){
+  const key=getKey('anthropic');if(!key){toast('Add Anthropic API key in Settings','error');return;}
+  const url=S.images[S.editorIndex];if(!url){toast('No image selected','error');return;}
+  toast('Upscaling via Magnific...','info');
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:512,mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],system:'Upscale the image using Magnific MCP images_upscale tool. Return only the final URL.',messages:[{role:'user',content:'Upscale this image 2x using Magnific: '+url+'\nReturn only the URL.'}]})});
+    const data=await res.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=text.match(/https?:\/\/\S+/);
+    if(match){S.images[S.editorIndex]=match[0];loadImageToCanvas(S.editorIndex);showSlotImage(S.editorIndex,match[0]);toast('Upscaled','success');}
+    else toast('No URL returned','error');
+  }catch(e){toast('Upscale failed: '+e.message,'error');}
+}
+
+async function removeBackground(){
+  const key=getKey('anthropic');if(!key){toast('Add Anthropic API key in Settings','error');return;}
+  const url=S.images[S.editorIndex];if(!url){toast('No image selected','error');return;}
+  toast('Removing background via Magnific...','info');
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:512,mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],system:'Remove background from image using Magnific MCP images_remove_background tool. Return only the final URL.',messages:[{role:'user',content:'Remove background from: '+url+'\nReturn only the URL.'}]})});
+    const data=await res.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=text.match(/https?:\/\/\S+/);
+    if(match){S.images[S.editorIndex]=match[0];loadImageToCanvas(S.editorIndex);showSlotImage(S.editorIndex,match[0]);toast('Background removed','success');}
+    else toast('No URL returned','error');
+  }catch(e){toast('Failed: '+e.message,'error');}
+}
+
+// ─── EXPORT PREVIEW ───────────────────────────────────────────────────────────
+function buildExportPreview(){
+  const grid=document.getElementById('export-preview');if(!grid)return;
+  grid.innerHTML='';
+  IMAGE_TYPES.forEach((t,i)=>{
+    const url=S.images[i];
+    grid.innerHTML+='<div class="img-slot">'+(url?'<img src="'+url+'" />':'<div class="img-placeholder"><div class="img-placeholder-icon">'+t.emoji+'</div><span>'+t.label+'</span></div>')+'<div class="img-slot-label">'+t.label+'</div></div>';
+  });
+}
+
+// ─── CANVA EXPORT ─────────────────────────────────────────────────────────────
+async function exportToCanva(){
+  const images=S.images.filter(Boolean);
+  if(!images.length){toast('No images to export yet','error');return;}
+  const key=getKey('anthropic');
+  const name=document.getElementById('canva-name').value||'Amazon Listing Images';
+  const log=document.getElementById('canva-log');
+  log.style.display='block';log.innerHTML='';
+  document.getElementById('canva-btn').disabled=true;
+  addLog(log,'info','Connecting to Canva MCP...');
+
+  if(!key){
+    await delay(800);addLog(log,'ok','✓ Canva connected (demo)');
+    for(let i=0;i<images.length;i++){await delay(300);addLog(log,'ok','✓ Page '+(i+1)+': '+IMAGE_TYPES[i].label+' — product layer + background layer added');}
+    addLog(log,'info','Add Anthropic API key to push real layered designs to Canva');
+    toast('Demo mode — add API key for real Canva export','info');
+    document.getElementById('canva-btn').disabled=false;return;
+  }
+
+  try{
+    addLog(log,'info','Creating "'+name+'" with editable layers...');
+    const imageList=IMAGE_TYPES.filter((_,i)=>S.images[i]).map((t,i)=>'Page '+(i+1)+' ('+t.label+'): '+S.images[i]).join('\n');
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:1024,
+        mcp_servers:[{type:'url',url:'https://mcp.canva.com/mcp',name:'canva'}],
+        system:'Create a Canva design with the specified images. Return the design URL when done.',
+        messages:[{role:'user',content:'Create a new Canva presentation design called "'+name+'". Add '+images.length+' pages. For each page add the image as a full-bleed background element. Also add a transparent text layer on each page ready for editing.\n\nImages:\n'+imageList+'\n\nPage names: '+IMAGE_TYPES.filter((_,i)=>S.images[i]).map(t=>t.label).join(', ')+'\n\nReturn the design URL.'}]
+      })
+    });
+    const data=await res.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    addLog(log,'ok','✓ Design created in Canva with '+images.length+' pages');
+    const urlMatch=text.match(/https?:\/\/[^\s]+canva[^\s]+/i);
+    if(urlMatch){addLog(log,'info','🔗 '+urlMatch[0]);}
+    else if(text){addLog(log,'info',text.slice(0,200));}
+    toast('Pushed to Canva!','success');
+  }catch(e){addLog(log,'err','Error: '+e.message);toast('Canva export failed','error');}
+  document.getElementById('canva-btn').disabled=false;
+}
+
+function downloadAll(){
+  const images=S.images.filter(Boolean);
+  if(!images.length){toast('No images yet','error');return;}
+  S.images.forEach((url,i)=>{if(url){const a=document.createElement('a');a.href=url;a.download=IMAGE_TYPES[i].id+'.jpg';a.target='_blank';setTimeout(()=>a.click(),i*200);}});
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function getKey(name){return localStorage.getItem('la3_'+name)||document.getElementById(name+'-key')?.value||'';}
+function saveSettings(){['anthropic','removebg'].forEach(k=>{const el=document.getElementById(k+'-key');if(el?.value)localStorage.setItem('la3_'+k,el.value);});}
+function loadSettings(){['anthropic','removebg'].forEach(k=>{const val=localStorage.getItem('la3_'+k);const el=document.getElementById(k+'-key');if(val&&el)el.value=val;});}
+function saveAndConfirm(){saveSettings();toast('Settings saved','success');}
+
+async function testAnthropic(){
+  const key=document.getElementById('anthropic-key').value;
+  const status=document.getElementById('anthropic-status');
+  if(!key){status.style.color='var(--danger)';status.textContent='Enter a key first';return;}
+  status.style.color='var(--muted)';status.textContent='Testing...';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:10,messages:[{role:'user',content:'Hi'}]})});
+    if(res.ok){status.style.color='var(--success)';status.textContent='✓ Connected';localStorage.setItem('la3_anthropic',key);}
+    else{status.style.color='var(--danger)';status.textContent='✗ Invalid key (HTTP '+res.status+')';}
+  }catch(e){status.style.color='var(--danger)';status.textContent='✗ '+e.message;}
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const v=id=>document.getElementById(id)?.value?.trim()||'';
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+function addLog(el,type,msg){el.innerHTML+='<div class="'+type+'">'+msg+'</div>';el.scrollTop=el.scrollHeight;}
+function setBadge(type,text){const b=document.getElementById('status-badge');b.className='badge badge-'+(type==='green'?'green':type==='yellow'?'yellow':type==='red'?'red':'purple');b.innerHTML='<span class="badge-dot"></span> '+text;}
+function toast(msg,type='info'){const t=document.getElementById('toast');const icons={success:'✓',error:'✗',info:'ℹ'};t.innerHTML='<span>'+(icons[type]||'ℹ')+'</span> '+msg;t.className='toast show '+type;setTimeout(()=>t.classList.remove('show'),3500);}
+</script>
+</body>
+</html>
