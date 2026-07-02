@@ -224,7 +224,7 @@ select option{background:var(--surface2)}
     </div>
     <div class="topbar-right">
       <span id="status-badge" class="badge badge-purple"><span class="badge-dot"></span> Ready</span>
-      <button class="btn btn-primary" id="main-btn" onclick="handleMainAction()">Generate prompts →</button>
+      <button class="btn btn-primary" id="main-btn" onclick="handleMainAction()">Generate prompts</button>
     </div>
   </div>
 
@@ -362,7 +362,7 @@ select option{background:var(--surface2)}
           </div>
           <div class="row">
             <button class="btn btn-ghost btn-sm" onclick="clearSpotMask()">Clear selection</button>
-            <button class="btn btn-primary btn-sm" onclick="runSpotEdit()">Apply spot edit via Magnific →</button>
+            <button class="btn btn-primary btn-sm" onclick="runSpotEdit()">Apply spot edit via Magnific</button>
           </div>
           <div class="log" id="spot-log" style="display:none;margin-top:10px"></div>
         </div>
@@ -410,7 +410,7 @@ select option{background:var(--surface2)}
           <div class="form-group" style="margin-bottom:8px">
             <input type="text" id="ideo-prompt" placeholder="Describe the infographic style..." style="font-size:11px;padding:7px 10px"/>
           </div>
-          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="regenWithIdeogram()">Generate with Ideogram 4 →</button>
+          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="regenWithIdeogram()">Generate with Ideogram 4</button>
         </div>
       </div>
     </div>
@@ -434,7 +434,7 @@ select option{background:var(--surface2)}
       </div>
       <div class="image-grid" id="export-preview" style="margin-bottom:20px"></div>
       <div class="row">
-        <button class="btn btn-success" id="canva-btn" onclick="exportToCanva()">Push to Canva with layers →</button>
+        <button class="btn btn-success" id="canva-btn" onclick="exportToCanva()">Push to Canva with layers</button>
         <button class="btn btn-ghost" onclick="downloadAll()">⬇ Download all JPEGs</button>
       </div>
       <div class="log" id="canva-log" style="display:none"></div>
@@ -493,6 +493,8 @@ select option{background:var(--surface2)}
 <div class="toast" id="toast"></div>
 
 <script>
+const PROXY = 'https://magnific-proxy.onrender.com';
+
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const IMAGE_TYPES = [
   { id:'hero',        label:'Hero shot',         emoji:'⭐', model:'nano',  desc:'Product on pure white bg, 85%+ frame fill, studio lit' },
@@ -508,6 +510,22 @@ const MODEL_SLUGS = {
   nano: 'imagen-nano-banana-2',
   ideo: 'ideogram-4'
 };
+
+// ─── ANTHROPIC PROXY HELPER ──────────────────────────────────────────────────
+async function callAnthropic(params) {
+  const key = getKey('anthropic');
+  if (!key) throw new Error('Add Anthropic API key in Settings first');
+  const res = await fetch(PROXY + '/anthropic', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ api_key: key, ...params })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || err.error || 'API error ' + res.status);
+  }
+  return await res.json();
+}
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 const S = {
@@ -529,11 +547,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
 const PANELS = {
-  input:    {title:'Product input',      sub:'Tell the agent about your product',          btn:'Generate prompts →',   action:'handleMainAction()'},
-  prompts:  {title:'AI prompts',         sub:'Review before generating',                   btn:'Generate images →',    action:'goGenerate()'},
-  generate: {title:'Generate images',    sub:'Google Nano Banana Pro + Ideogram 4 via Magnific MCP', btn:'Edit images →', action:'goEditor()'},
-  editor:   {title:'Edit & spot edit',   sub:'Add text, spot-edit areas, enhance via Magnific', btn:'Export to Canva →', action:'goExport()'},
-  export:   {title:'Export to Canva',    sub:'Push layered designs to your Canva account', btn:'Done ✓',              action:''},
+  input:    {title:'Product input',      sub:'Tell the agent about your product',          btn:'Generate prompts',   action:'handleMainAction()'},
+  prompts:  {title:'AI prompts',         sub:'Review before generating',                   btn:'Generate images',    action:'goGenerate()'},
+  generate: {title:'Generate images',    sub:'Google Nano Banana Pro + Ideogram 4 via Magnific MCP', btn:'Edit images', action:'goEditor()'},
+  editor:   {title:'Edit & spot edit',   sub:'Add text, spot-edit areas, enhance via Magnific', btn:'Export to Canva', action:'goExport()'},
+  export:   {title:'Export to Canva',    sub:'Push layered designs to your Canva account', btn:'Done',              action:''},
   settings: {title:'Settings',           sub:'API keys and generation options',             btn:'Save',                action:'saveAndConfirm()'},
 };
 
@@ -593,7 +611,7 @@ async function lookupASIN(){
   btn.textContent='Searching...';btn.disabled=true;
   const resultEl=document.getElementById('asin-result');resultEl.style.display='none';
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,tools:[{type:'web_search_20250305',name:'web_search'}],system:'Search for this Amazon product by ASIN and return ONLY a JSON object with: name, brand, category, features (string array), price, rating, description. No markdown.',messages:[{role:'user',content:'Find Amazon ASIN: '+asin+'. Return JSON only.'}]})});
+    const res=await callAnthropic({model:'claude-sonnet-4-6',max_tokens:1500,tools:[{type:'web_search_20250305',name:'web_search'}],system:'Search for this Amazon product by ASIN and return ONLY a JSON object with: name, brand, category, features (string array), price, rating, description. No markdown.',messages:[{role:'user',content:'Find Amazon ASIN: '+asin+'. Return JSON only.'}]});
     const data=await res.json();
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     const match=text.replace(/```json|```/g,'').match(/\{[\s\S]*\}/);
@@ -640,7 +658,7 @@ async function generatePrompts(info){
   }
 
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,system:'You are an Amazon listing image strategist. Write highly specific, conversion-optimised prompts. Return ONLY a valid JSON array, no markdown.',messages:[{role:'user',content:'Create 7 Amazon listing image prompts for:\n\n'+pt+'\n\nReturn a JSON array of exactly 7 objects, each with:\n- "type": hero|lifestyle|features|detail|infographic|comparison|inaction\n- "label": display name\n- "model": "nano" for photorealistic OR "ideo" for text/graphics/charts\n- "prompt": highly specific 2-4 sentence prompt tailored to THIS exact product\n- "negative": what to avoid\n\nRules:\n- hero,lifestyle,detail,inaction → nano (Google Nano Banana Pro)\n- features,infographic,comparison → ideo (Ideogram 4)\n- Hero: pure white background, product 85%+ frame fill\n- Include lighting, angle, mood, composition\n- Ideogram prompts must clearly specify all text content to appear in the image\n\nReturn only the JSON array.'}]})});
+    const res=await callAnthropic({model:'claude-sonnet-4-6',max_tokens:3000,system:'You are an Amazon listing image strategist. Write highly specific, conversion-optimised prompts. Return ONLY a valid JSON array, no markdown.',messages:[{role:'user',content:'Create 7 Amazon listing image prompts for:\n\n'+pt+'\n\nReturn a JSON array of exactly 7 objects, each with:\n- "type": hero|lifestyle|features|detail|infographic|comparison|inaction\n- "label": display name\n- "model": "nano" for photorealistic OR "ideo" for text/graphics/charts\n- "prompt": highly specific 2-4 sentence prompt tailored to THIS exact product\n- "negative": what to avoid\n\nRules:\n- hero,lifestyle,detail,inaction → nano (Google Nano Banana Pro)\n- features,infographic,comparison → ideo (Ideogram 4)\n- Hero: pure white background, product 85%+ frame fill\n- Include lighting, angle, mood, composition\n- Ideogram prompts must clearly specify all text content to appear in the image\n\nReturn only the JSON array.'}]});
     const data=await res.json();
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     const match=text.replace(/```json|```/g,'').match(/\[[\s\S]*\]/);
@@ -721,19 +739,7 @@ async function generateImage(promptObj,index){
     return 'https://placehold.co/600x600/'+colors[index%colors.length]+'/ffffff?text='+encodeURIComponent((promptObj.label||'Image '+(index+1)).replace(/ /g,'+'));
   }
 
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-6',max_tokens:512,
-      mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],
-      system:'Use Magnific MCP to generate an image. After generation call creations_show then return the image URL on its own line.',
-      messages:[{role:'user',content:'Generate a 1:1 image using Magnific with model slug "'+modelSlug+'" and resolution "'+resolution+'".\n\nPrompt: "'+promptObj.prompt+'"\n\nNegative prompt: "'+(promptObj.negative||'')+'"\n\nAfter generating, return the image URL.'}]
-    })
-  });
-
-  if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||'API error '+res.status);}
-  const data=await res.json();
+  const data=await callAnthropic({model:'claude-sonnet-4-6',max_tokens:512,mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],system:'Use Magnific MCP to generate an image. After generation call creations_show then return the image URL on its own line.',messages:[{role:'user',content:'Generate a 1:1 image using Magnific with model slug "'+modelSlug+'" and resolution "'+resolution+'".\n\nPrompt: "'+promptObj.prompt+'"\n\nNegative prompt: "'+(promptObj.negative||'')+'"\n\nAfter generating, return the image URL.'}]});
   const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
   const urlMatch=text.match(/https?:\/\/\S+\.(jpg|jpeg|png|webp)\S*/i)||text.match(/https?:\/\/[^\s"'<>]+/);
   if(urlMatch)return urlMatch[0];
@@ -859,16 +865,7 @@ async function runSpotEdit(){
   const maskDesc=`Region: x=${Math.round(rect.x)}, y=${Math.round(rect.y)}, width=${Math.round(rect.w)}, height=${Math.round(rect.h)} (out of 600x600 canvas)`;
 
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',max_tokens:512,
-        mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],
-        system:'Use Magnific MCP to edit a specific region of an image. Return only the final image URL.',
-        messages:[{role:'user',content:`Edit a specific region of this image: ${url}\n\n${maskDesc}\n\nWhat to put in this region: "${prompt}"\n\nUse Magnific's image editing tools to apply this change to just the selected region. Keep everything outside the region identical. Return only the resulting image URL.`}]
-      })
-    });
+    const res=await callAnthropic({model:'claude-sonnet-4-6',max_tokens:512,mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],system:'Use Magnific MCP to edit a specific region of an image. Return only the final image URL.',messages:[{role:'user',content:`Edit a specific region of this image: ${url}\n\n${maskDesc}\n\nWhat to put in this region: "${prompt}"\n\nUse Magnific's image editing tools to apply this change to just the selected region. Keep everything outside the region identical. Return only the resulting image URL.`}]});
     const data=await res.json();
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     const match=text.match(/https?:\/\/\S+\.(jpg|jpeg|png|webp)\S*/i)||text.match(/https?:\/\/[^\s"'<>]+/);
@@ -980,7 +977,7 @@ async function upscaleSelected(){
   const url=S.images[S.editorIndex];if(!url){toast('No image selected','error');return;}
   toast('Upscaling via Magnific...','info');
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:512,mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],system:'Upscale the image using Magnific MCP images_upscale tool. Return only the final URL.',messages:[{role:'user',content:'Upscale this image 2x using Magnific: '+url+'\nReturn only the URL.'}]})});
+    const res=await callAnthropic({model:'claude-sonnet-4-6',max_tokens:512,mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],system:'Upscale the image using Magnific MCP images_upscale tool. Return only the final URL.',messages:[{role:'user',content:'Upscale this image 2x using Magnific: '+url+'\nReturn only the URL.'}]});
     const data=await res.json();
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     const match=text.match(/https?:\/\/\S+/);
@@ -994,7 +991,7 @@ async function removeBackground(){
   const url=S.images[S.editorIndex];if(!url){toast('No image selected','error');return;}
   toast('Removing background via Magnific...','info');
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:512,mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],system:'Remove background from image using Magnific MCP images_remove_background tool. Return only the final URL.',messages:[{role:'user',content:'Remove background from: '+url+'\nReturn only the URL.'}]})});
+    const res=await callAnthropic({model:'claude-sonnet-4-6',max_tokens:512,mcp_servers:[{type:'url',url:'https://mcp.magnific.com',name:'magnific'}],system:'Remove background from image using Magnific MCP images_remove_background tool. Return only the final URL.',messages:[{role:'user',content:'Remove background from: '+url+'\nReturn only the URL.'}]});
     const data=await res.json();
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     const match=text.match(/https?:\/\/\S+/);
@@ -1035,16 +1032,7 @@ async function exportToCanva(){
   try{
     addLog(log,'info','Creating "'+name+'" with editable layers...');
     const imageList=IMAGE_TYPES.filter((_,i)=>S.images[i]).map((t,i)=>'Page '+(i+1)+' ('+t.label+'): '+S.images[i]).join('\n');
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',max_tokens:1024,
-        mcp_servers:[{type:'url',url:'https://mcp.canva.com/mcp',name:'canva'}],
-        system:'Create a Canva design with the specified images. Return the design URL when done.',
-        messages:[{role:'user',content:'Create a new Canva presentation design called "'+name+'". Add '+images.length+' pages. For each page add the image as a full-bleed background element. Also add a transparent text layer on each page ready for editing.\n\nImages:\n'+imageList+'\n\nPage names: '+IMAGE_TYPES.filter((_,i)=>S.images[i]).map(t=>t.label).join(', ')+'\n\nReturn the design URL.'}]
-      })
-    });
+    const res=await callAnthropic({model:'claude-sonnet-4-6',max_tokens:1024,mcp_servers:[{type:'url',url:'https://mcp.canva.com/mcp',name:'canva'}],system:'Create a Canva design with the specified images. Return the design URL when done.',messages:[{role:'user',content:'Create a new Canva presentation design called "'+name+'". Add '+images.length+' pages. For each page add the image as a full-bleed background element. Also add a transparent text layer on each page ready for editing.\n\nImages:\n'+imageList+'\n\nPage names: '+IMAGE_TYPES.filter((_,i)=>S.images[i]).map(t=>t.label).join(', ')+'\n\nReturn the design URL.'}]});
     const data=await res.json();
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     addLog(log,'ok','✓ Design created in Canva with '+images.length+' pages');
@@ -1072,11 +1060,12 @@ async function testAnthropic(){
   const key=document.getElementById('anthropic-key').value;
   const status=document.getElementById('anthropic-status');
   if(!key){status.style.color='var(--danger)';status.textContent='Enter a key first';return;}
-  status.style.color='var(--muted)';status.textContent='Testing...';
+  status.style.color='var(--muted)';status.textContent='Testing via proxy...';
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:10,messages:[{role:'user',content:'Hi'}]})});
-    if(res.ok){status.style.color='var(--success)';status.textContent='✓ Connected';localStorage.setItem('la3_anthropic',key);}
-    else{status.style.color='var(--danger)';status.textContent='✗ Invalid key (HTTP '+res.status+')';}
+    const res=await fetch(PROXY+'/test-anthropic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:key})});
+    const data=await res.json();
+    if(data.valid){status.style.color='var(--success)';status.textContent='✓ Connected via proxy';localStorage.setItem('la3_anthropic',key);}
+    else{status.style.color='var(--danger)';status.textContent='✗ Invalid key (HTTP '+data.status+')';}
   }catch(e){status.style.color='var(--danger)';status.textContent='✗ '+e.message;}
 }
 
